@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post, StreamableFile } from '@nestjs/common';
 import { AppService } from './app.service.js';
 
 @Controller()
@@ -11,9 +11,14 @@ export class AppController {
   }
 
   @Post('create-ats-cv')
-  createPdf(@Body() cvData: unknown): unknown {
-  return this.appService.createPdf(cvData);
-  }
+async createPdf(@Body() cvData: unknown): Promise<StreamableFile> {
+  const pdf = await this.appService.createPdf(cvData);
+
+  return new StreamableFile(pdf, {
+    type: 'application/pdf',
+    disposition: 'attachment; filename="my-cv.pdf"',
+  });
+}
 
 
 }
