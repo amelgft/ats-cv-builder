@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, HttpException, Injectable } from '@nestjs/common';
 import fs from 'node:fs/promises';
 import Handlebars from 'handlebars';
 import puppeteer from 'puppeteer';
@@ -50,6 +50,17 @@ export class AppService {
 
   if (!response.ok) {
   const details = await response.text();
+  if (response.status === 429){
+    throw new HttpException(
+      'AI limits has been reached, please try again later',
+      429
+    )
+  } else if(response.status === 503){
+    throw new HttpException(
+      'The AI service is busy. Please try again shortly',
+      503
+    )
+  }
   console.error('Google error:', details);
   throw new Error(`Google request failed: ${response.status}`);
 }
@@ -122,7 +133,7 @@ export class AppService {
 
       const runningTime = finishTiming - starttiming;
 
-      console.log("PDF duration: ", runningTime)
+      console.log("PDF: ", runningTime)
     }
 
     

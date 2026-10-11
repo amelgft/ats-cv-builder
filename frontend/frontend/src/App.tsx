@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import './App.css';
+
+
 type Entry = {
   id: string;
   title: string;
@@ -172,7 +174,11 @@ function Entries({ kind, entries, onChange }: EntriesProps) {
     </section>
   );
 }
+
+
+
 export default function App() {
+  const[pdfUrl, setPdfUrl] = useState<string | null>(null); 
   const [contact, setContact] = useState(initialContact);
   const [skills, setSkills] = useState(initialSkills);
   const [summary, setSummary] = useState('');
@@ -185,12 +191,16 @@ export default function App() {
   function resetForm() {
     setContact(initialContact);
     setSkills(initialSkills);
-    setSummary('');
+    setSummary(''); 
     setExperience([]);
     setProjects([]);
     setEducation([]);
     setError('');
     setMessage('');
+    if (pdfUrl) {
+    URL.revokeObjectURL(pdfUrl);
+    }
+    setPdfUrl('');
   }
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -256,27 +266,37 @@ export default function App() {
       //  signal: AbortSignal.timeout(90000),
       });
       if (!response.ok) {
+        if( response.status === 429) {
+         
+          throw new Error(
+            'The generation limit has been reached. Please try again later'
+        );
+
+      }
+
+      if ( response.status === 503) {
         throw new Error(
-          response.status === 429
-            ? 'The generation limit has been reached. Please try again later.'
-            : `Could not generate your CV (${response.status}). Your fields are saved on this page; please try again later.`,
+         
+           'The AI service is busy. Please try again shortly'
         );
       }
+
+      throw new Error(
+            `Could not generate your CV (${response.status}), please try again later`,
+
+      )
+    }
       if (!response.headers.get('content-type')?.includes('application/pdf')) {
         throw new Error('The server did not return a PDF.');
       }
+
       const pdf = await response.blob();
       const url = URL.createObjectURL(pdf);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'my-cv.pdf';
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      // Give the browser time to start the download before releasing the URL.
-      window.setTimeout(() => URL.revokeObjectURL(url), 60000);
-      setMessage('Your PDF is ready. Check your downloads and review the wording.');
-    } catch (error) {
+
+      setPdfUrl(url);
+      setMessage('Download cv pdf')
+      }
+      catch (error) {
       setError(
         error instanceof Error && error.name === 'TimeoutError'
           ? 'Generation took too long. Please try again later.'
@@ -294,7 +314,7 @@ export default function App() {
     <main className="app-shell">
       <header className="hero">
         <div className="lab-brand">Amel<span>.</span></div>
-        <span className="eyebrow">CV LAB · WRITE YOUR NEXT CHAPTER</span>
+        <span className="eyebrow">CV GENERATOR</span>
         <h1>Your experience.<br /><span>Clearly presented.</span></h1>
         <p>
           Fill in your details. Refine your wording with AI.
@@ -359,7 +379,12 @@ export default function App() {
         </fieldset>
         {loading && <p className="status" role="status">Improving wording and preparing your PDF…</p>}
         {error && <p className="status error" role="alert">{error}</p>}
-        {message && <p className="status success" role="status">{message}</p>}
+        {/* {message && <p className="status success" role="status">{message}</p>} */}
+        {pdfUrl && (
+          <a href={pdfUrl} className='status success' download="my-cv.pdf">
+            Download PDF
+          </a>  
+          )}
       </form>
       <footer>Amel. Lab · Small tools. Real possibilities.</footer>
     </main>
