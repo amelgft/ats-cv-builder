@@ -11,7 +11,7 @@ export class AppController {
   }
 
   @Post('create-ats-cv')
-async createPdf(@Body() cvData: unknown): Promise<StreamableFile> {
+  async createPdf(@Body() cvData: unknown): Promise<StreamableFile> {
   const pdf = await this.appService.createPdf(cvData);
 
   return new StreamableFile(pdf, {
@@ -19,6 +19,4 @@ async createPdf(@Body() cvData: unknown): Promise<StreamableFile> {
     disposition: 'attachment; filename="my-cv.pdf"',
   });
 }
-
-
 }

@@ -44,7 +44,7 @@ export class AppService {
           },
         ],
       }),
-      signal: AbortSignal.timeout(30000),
+      // signal: AbortSignal.timeout(30000),
     },
   );
 
@@ -81,8 +81,13 @@ export class AppService {
       throw new BadRequestException('CV data is required')
     }
 
+    const startTime: number = Date.now();
     const improvedCv = await this.testAi(cvData);
+    
+    const finishTime: number = Date.now();
 
+    const executionTime = finishTime - startTime;
+    console.log("AI api calling time: ", executionTime);
     const templateHtml = await fs.readFile(
       'template/cv.html',
       { encoding: 'utf8' },
@@ -92,6 +97,7 @@ export class AppService {
     const renderTemplate = Handlebars.compile(templateHtml);
     const filledHtml = renderTemplate(improvedCv);
 
+    const starttiming = Date.now();
     const browser = await puppeteer.launch();
 
     try {
@@ -106,8 +112,17 @@ export class AppService {
         });
 
       return pdf;
+    
+    
+
     } finally {
       await browser.close();
+
+      const finishTiming = Date.now();
+
+      const runningTime = finishTiming - starttiming;
+
+      console.log("PDF duration: ", runningTime)
     }
 
     
